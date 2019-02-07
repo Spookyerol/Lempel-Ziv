@@ -15,6 +15,7 @@ def encode(msg, W, L):
     encoded = []
     while(i <= len(bitStr)-1):
         codedChar = codeChar(bitStr, i, W, L)
+        #print(codedChar[1])
         encoded.append(codedChar[1])
         if(i == len(bitStr)-1):
             break
@@ -39,48 +40,66 @@ def codeChar(bitStr, i, W, L):
     d = 0
     l = 0
     if(bitStr[i] in bitStr[windowStart:i]): 
-        while(bitStr[i] != bitStr[windowStart]):
+        #print(i, bitStr[i], bitStr[windowStart:i])
+        while(bitStr[i] != bitStr[windowStart]): #Find the first matching character in window
             windowStart += 1
         d = i - windowStart
         l += 1
-        if(i == len(bitStr)-1):
+        if(i == len(bitStr)-1): #Last character reached
             return i, (d, l, "-")
-        while(bitStr[i + l] == bitStr[windowStart + l] and i + l < bufferEnd):
+        while(bitStr[i + l] == bitStr[windowStart + l] and i + l < bufferEnd): #Continue matching characters between window and buffer
+            print(bitStr[i + l])
             l += 1
-        i = i + l
+            print(bitStr[i + l])
+        i = i + l + 1
         char = bitStr[i]
+        print(i, (d, l, char))
         return i, (d, l, char)
-    else:
+    else: #Have not encountered character before
         i = i + 1
         return i, (0, 0, char)
     
 def decode(codeArr):
     i = 0
-    j = i
     bitStr = ""
     while(codeArr[i][-1] != "-"):
         #print(codeArr[i])
         code = codeArr[i]
-        j = i - code[0]
-        #print(j)
+        d = code[0]
+        lookBack = 0
+        it = 0
+        while(d > 0):
+            it = it + 1
+            d = d - codeArr[i - it][1] - 1
+            lookBack = lookBack + 1
+        it = 1
+        j = i - lookBack
+        #print(code)
+        #print(j, i, code[0], lookBack)
         if(code[1] == 0):
+            #print(j, code)
+            bitStr += code[-1]
+        elif(code[1] == 1):
+            #print(-code[0], -code[0] + code[1])
+            #print(code, bitStr, bitStr[-code[0]:-code[0] + code[1]])
+            bitStr += bitStr[-1]
             bitStr += code[-1]
         else:
-            for k in range(code[1]):
-                prevCode = codeArr[j]
-                bitStr += prevCode[-1]
-                j = j + 1
-            bitStr += code[-1]
+            subStr = bitStr[-code[0]:-code[0] + code[1]]
+            #print(-code[0], -code[0] + code[1])
+            #print(code, bitStr, bitStr[-code[0]:-code[0] + code[1]])
+            bitStr += subStr
         i = i + 1
         if(codeArr[i][-1] == "-"):
             code = codeArr[i]
-            j = i - code[0]
+            #print(code)
+            j = i - lookBack
             for k in range(code[1]):
                 prevCode = codeArr[j]
                 bitStr += prevCode[-1]
                 j = j + 1
     
-    #print(bitStr)
+    print(bitStr)
     #bits.tobytes().decode('utf-8')
         
 decode(encode("abracadabra", 8, 8))
