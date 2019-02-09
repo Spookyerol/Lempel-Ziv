@@ -7,21 +7,21 @@ Created on Mon Feb  4 19:19:47 2019
 from bitarray import bitarray
 
 def encode(msg, W, L):
-    bitStr = ""
-    for char in msg:
-        bitStr += bin(ord(char))[2:].zfill(8)
-    print(bitStr)
+    bitStr = msg
     i = 0
-    encoded = []
-    while(i <= len(bitStr)-1):
+    encoded = bitarray()
+    encodedStr = []
+    while(i < len(bitStr)):
         codedChar = codeChar(bitStr, i, W, L)
-        #print(codedChar[1])
-        encoded.append(codedChar[1])
-        if(i == len(bitStr)-1):
+        encodedStr.append(codedChar[1])
+        for j in range(len(codedChar)-1):
+            encoded += bin(int(codedChar[1][j]))[2:].zfill(8)
+        encoded += bin(ord(codedChar[-1][-1]))[2:].zfill(8)
+        if(i == len(bitStr)):
             break
         else:
             i = codedChar[0]
-    print(encoded)
+    print(encodedStr)
     return encoded
 
 def codeChar(bitStr, i, W, L):
@@ -34,93 +34,113 @@ def codeChar(bitStr, i, W, L):
     else: 
         windowStart = i - W
     if(len(bitStr)-i <= L):
-        bufferEnd = len(bitStr) - 1
+        bufferEnd = len(bitStr)
     else:
         bufferEnd = i + L
-    d = 0
-    l = 0
-    if(bitStr[i] in bitStr[windowStart:i]): 
-        #print(i, bitStr[i], bitStr[windowStart:i])
-        while(bitStr[i] != bitStr[windowStart]): #Find the first matching character in window
-            windowStart += 1
-        d = i - windowStart
-        l += 1
-        if(i == len(bitStr)-1): #Last character reached
-            return i, (d, l, "-")
-        while(bitStr[i + l] == bitStr[windowStart + l] and i + l < bufferEnd): #Continue matching characters between window and buffer
-            print(bitStr[i + l])
-            l += 1
-            print(bitStr[i + l])
-        i = i + l + 1
+    if(bitStr[i] in bitStr[windowStart:i]):
+        match = getLongestPrefix(bitStr[windowStart:i], bitStr[i:bufferEnd])
+        i = i + match[1]
+        if(i > len(bitStr)-1):
+            return i, (match[0], match[1], "-")
         char = bitStr[i]
-        print(i, (d, l, char))
-        return i, (d, l, char)
+        i = i + 1
+        return i, (match[0], match[1], char)
     else: #Have not encountered character before
         i = i + 1
         return i, (0, 0, char)
     
+def getLongestPrefix(window, buffer):
+    curPrefix = ""
+    longestPrefix = (-1, -1)
+    d = len(window)
+    i = 0
+    j = 0
+    mark = -1
+    while(j < len(window)):
+        isNext = False
+        while(i < len(buffer) and buffer[i] == window[j]):
+            if(curPrefix == ""):
+                mark = j  
+            curPrefix += window[j]
+            j = j + 1
+            i = i + 1
+            isNext = True
+            if(j == len(window)):
+                break
+        if(len(curPrefix) >= longestPrefix[-1]):
+            d = len(window) - mark
+            longestPrefix = (d, len(curPrefix))
+            curPrefix = ""
+            i = 0
+        if(not isNext):
+            curPrefix = ""
+            i = 0
+            j = j + 1
+    return longestPrefix
+
 def decode(codeArr):
+#    with open('somefile.bin', 'rb') as fh:
+#    a.fromfile(fh)
     i = 0
     bitStr = ""
     while(codeArr[i][-1] != "-"):
-        #print(codeArr[i])
         code = codeArr[i]
-        d = code[0]
-        lookBack = 0
-        it = 0
-        while(d > 0):
-            it = it + 1
-            d = d - codeArr[i - it][1] - 1
-            lookBack = lookBack + 1
-        it = 1
-        j = i - lookBack
-        #print(code)
-        #print(j, i, code[0], lookBack)
         if(code[1] == 0):
-            #print(j, code)
-            bitStr += code[-1]
-        elif(code[1] == 1):
-            #print(-code[0], -code[0] + code[1])
-            #print(code, bitStr, bitStr[-code[0]:-code[0] + code[1]])
-            bitStr += bitStr[-1]
             bitStr += code[-1]
         else:
-            subStr = bitStr[-code[0]:-code[0] + code[1]]
-            #print(-code[0], -code[0] + code[1])
-            #print(code, bitStr, bitStr[-code[0]:-code[0] + code[1]])
-            bitStr += subStr
-        i = i + 1
-        if(codeArr[i][-1] == "-"):
-            code = codeArr[i]
-            #print(code)
-            j = i - lookBack
+            j = len(bitStr) - code[0]
             for k in range(code[1]):
-                prevCode = codeArr[j]
-                bitStr += prevCode[-1]
+                bitStr += bitStr[j]
                 j = j + 1
-    
-    print(bitStr)
-    #bits.tobytes().decode('utf-8')
-        
-decode(encode("abracadabra", 8, 8))
+            bitStr += code[-1]
+        i = i + 1
+        try:
+            if(codeArr[i][-1] == "-"):
+                code = codeArr[i]
+                j = len(bitStr) - code[0]
+                for k in range(code[1]):
+                    bitStr += bitStr[j]
+                    j = j + 1
+        except(IndexError):
+            break
+    bitStr = bitarray(bitStr)
+    decoded = bitStr.tobytes().decode("utf-8")
+    print(decoded)
+    return decoded
 
-"""
-while input is not empty do
-    prefix := longest prefix of input that begins in window
+def compressFile(fileName, W, L, infWindow):
+    with open(fileName, encoding="utf8") as file:
+        content = file.read()
+    print(content)
+    if(infWindow):
+        W = len(content)
+        L = len(content)
+    encoded = encode(content, W, L)
+    binaryName = fileName.split(".")[0] + ".bin"
+    with open(binaryName, "wb") as file:
+        encoded.tofile(file)
+        file.flush()
+    print("File " + fileName + " compressed.")
     
-    if prefix exists then
-        i := distance to start of prefix
-        l := length of prefix
-        c := char following prefix in input
-    else
-        i := 0
-        l := 0
-        c := first char of input
-    end if
-    
-    output (i, l, c)
-    
-    s := pop l+1 chars from front of input
-    discard l+1 chars from front of window
-    append s to back of window
-"""
+compressFile("text1.txt", 16, 8, True)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
