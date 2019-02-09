@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-Created on Mon Feb  4 19:19:47 2019
+Created on Mon Feb 4 19:19:47 2019
 
 @author: Erdal Guclu
 """
 from bitarray import bitarray
 
+bitCount = 8 #This global variable allows one to determine the amount of bytes to be used to encode a single number (for d and l)
 
 #params:
 #   content: full content of file to be compressed
@@ -13,13 +14,14 @@ from bitarray import bitarray
 #   L: lookahead buffer size
 #The main encode function that turns content into a binary bitarray
 def encode(content, W, L):
+    global bitCount
     i = 0
     encoded = bitarray()
     while(i < len(content)):
         codedChar = codeChar(content, i, W, L)
         #.zfill(8) makes sure each value/character is encoded into a single byte
-        encoded += bin(int(codedChar[1][0]))[2:].zfill(8) #distance d
-        encoded += bin(int(codedChar[1][1]))[2:].zfill(8) #length l
+        encoded += bin(int(codedChar[1][0]))[2:].zfill(bitCount) #distance d
+        encoded += bin(int(codedChar[1][1]))[2:].zfill(bitCount) #length l
         try:
             encoded += bin(ord(codedChar[-1][-1]))[2:].zfill(8)
         except(TypeError): #Have reached the last empty string character
@@ -128,6 +130,11 @@ def decode(codeArr):
 #   infWindow: bool that if true overrides W and L and uses "infinite" buffer and window size
 #This is mainly a wrapper function for encode that reads the content of a file and passes it through
 def compressFile(fileName, W, L, infWindow):
+    global bitCount
+    if(W > 2**bitCount - 1):
+        W = 2**bitCount - 1
+        L = 2**bitCount - 1
+        print("The window and buffer sizes were above the maximum for the no. of bytes used to encode distance and length so have been adjusted to: " + str(2**bitCount - 1))
     with open(fileName, encoding="utf8") as file:
         content = file.read()
     if(infWindow):
@@ -144,14 +151,15 @@ def compressFile(fileName, W, L, infWindow):
 #   fileName: name of the binary file to be compressed excluding the extension
 #This is mainly a wrapper function for decode that reads the content of the correspinding binary and passes it through  
 def decompressFile(fileName):
+    global bitCount
     decoded = []
     binary = bitarray()
     with open(fileName + '.bin', 'rb') as file: #Read binary
         binary.fromfile(file)
     binary = binary.to01() #Turn bitarray into string of binary
-    for j in range(0, len(binary), 24): #Reads the string 3 bytes at a time
-        triBytes = binary[j:j + 24]
-        decoded.append((int(triBytes[0:8], 2), int(triBytes[8:16], 2), chr(int(triBytes[16:24], 2)))) #Creates an array of triplets to pass into decode
+    for j in range(0, len(binary), bitCount*2 + 8): #Reads the string 5 bytes at a time
+        triBytes = binary[j:j + bitCount*2 + 8]
+        decoded.append((int(triBytes[0:bitCount], 2), int(triBytes[bitCount:bitCount*2], 2), chr(int(triBytes[bitCount*2:bitCount*2 + 8], 2)))) #Creates an array of triplets to pass into decode
     decompressed = decode(decoded)
     decompressed = decompressed[0:-1] #Remove the ending marker
     with open("decompressed.txt", "w+") as file: #Write decompressed content to file
@@ -159,25 +167,7 @@ def decompressFile(fileName):
         file.flush()
     print("File " + fileName + " decompressed.")
     
-compressFile("Lempel-Ziv_Compressor.py", 128, 128, False)
-decompressFile("Lempel-Ziv_Compressor")
+compressFile("text1.txt", 255, 255, True)
+decompressFile("text1")
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#def experiment(n):
