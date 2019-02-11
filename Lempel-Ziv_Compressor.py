@@ -6,168 +6,173 @@ Created on Mon Feb 4 19:19:47 2019
 """
 from bitarray import bitarray
 
-bitCount = 8 #This global variable allows one to determine the amount of bytes to be used to encode a single number (for d and l)
+bitCount = 16 #This global variable allows one to determine the amount of bytes to be used to encode a single number (for d and l)
 
 #params:
 #   content: full content of file to be compressed
 #   W: window size
 #   L: lookahead buffer size
-#The main encode function that turns content into a binary bitarray
-def encode(content, W, L):
+#The main encode function that turns content into a binary bitarray and writes it to a .bin file
+def encode(fileName, W, L):
     global bitCount
+    with open(fileName, "rb") as file:
+        content = file.read()
     i = 0
     encoded = bitarray()
     while(i < len(content)):
         codedChar = codeChar(content, i, W, L)
-        #.zfill(8) makes sure each value/character is encoded into a single byte
-        encoded += bin(int(codedChar[1][0]))[2:].zfill(bitCount) #distance d
-        encoded += bin(int(codedChar[1][1]))[2:].zfill(bitCount) #length l
+        #.zfill(n*8) makes sure each value is encoded into n bytes
+        encoded += bin(codedChar[1][0])[2:].zfill(bitCount) #distance d
+        encoded += bin(codedChar[1][1])[2:].zfill(bitCount) #length l
         try:
-            encoded += bin(ord(codedChar[-1][-1]))[2:].zfill(8)
+            encoded += bin(codedChar[-1][-1])[2:].zfill(8)
         except(TypeError): #Have reached the last empty string character
             encoded += bin(0)[2:].zfill(8) #Add utf-8 "NULL" end marker
         if(i == len(content)):
             break
         else:
             i = codedChar[0] #set i to current position in input
+    binaryName = fileName.split(".")[0] + ".bin"
+    with open(binaryName, "wb") as file:
+        encoded.tofile(file)
+        file.flush()
     return encoded
 
 #params:
 #   content: full content of file to be compressed
-#   i: pointer to character currently being encoded
+#   i: pointer to byte currently being encoded
 #   W: window size
 #   L: lookahead buffer size
-#This is a function that encodes character i in content
+#This is a function that encodes byte i in content
+count = 0
+
 def codeChar(content, i, W, L):
+    global count
     char = content[i]
-    if(i == 0):
-        i = i + 1
-        return i, (0, 0, char)
-    elif(i <= W): #We are near the start of the bitStr so window starts at index 0
+    if(i <= W): #We are near the start of the bitStr so window starts at index 0
         windowStart = 0
     else: #We can use the full window size W 
         windowStart = i - W
     if(len(content)-i <= L): #We are near the end of bitStr so buffer has to end at final index 
         bufferEnd = len(content)
-    else: #We can use the fill buffer size L
+    else: #We can use the full buffer size L
         bufferEnd = i + L
-    if(content[i] in content[windowStart:i]): #The current character was seen in the window
-        match = getLongestPrefix(content[windowStart:i], content[i:bufferEnd])
+    #print(len(content[windowStart:i]))
+    match = getLongestPrefix(content[windowStart:i], content[i:bufferEnd], i)
+    if(count < 8):
+                print(content[windowStart:i])
+                print(content[i:bufferEnd])
+                print(content[i:bufferEnd][0:match[1]],  content[i:bufferEnd][0], match[1], len(content[windowStart:i]) - match[0], i)
+    count += 1
+    if(match[0] != -1): #A match has been found
+        d = len(content[windowStart:i]) - match[0]
         i = i + match[1]
         if(i > len(content)-1): #We are encoding the ending character
-            return i, (match[0], match[1], "") #Empty string will get turned into a marker
+            return i, (d, match[1], "") #Empty string will get turned into a marker
         char = content[i]
         i = i + 1
-        return i, (match[0], match[1], char)
-    else: #Have not encountered character before
+        return i, (d, match[1], char)
+    else: #A match was not found
         i = i + 1
         return i, (0, 0, char)
+    
+    
 #params:
 #   window: substring preceding the character being encoded
 #   buffer: substring including the character being encoded as characters after it
 #This function finds the longest substring in the window that matches with the first l characters of the buffer
-def getLongestPrefix(window, buffer):
-    curPrefix = ""
-    longestPrefix = (-1, -1)
-    d = len(window) #distance
-    i = 0 #pointer for buffer
-    j = 0 #pointer for window
-    mark = -1
-    while(j < len(window)):
-        isNext = False #If we break into the while loop below j will already point to the next character so we only increment j if this is false
-        while(i < len(buffer) and buffer[i] == window[j]):
-            if(curPrefix == ""): #We mark the index at which the prefix starts
-                mark = j  
-            curPrefix += window[j]
-            j = j + 1
-            i = i + 1
-            isNext = True
-            if(j == len(window)):
-                break
-        if(len(curPrefix) >= longestPrefix[-1]): #We check if the current prefix is longer than the last
-            d = len(window) - mark
-            longestPrefix = (d, len(curPrefix))
-            curPrefix = "" #Reset the current prefix so we can move on to the next
-            i = 0
-        if(not isNext): #Only executes if we did not break into the inner while loop
-            curPrefix = ""
-            i = 0
-            j = j + 1
-    return longestPrefix
-
-#params:
-#   codeArr: array of 3-tuples storing (distance, length, character)
-#Takes and encoded array and recreates the orginal content
-def decode(codeArr):
-    i = 0
-    content = ""
-    while(codeArr[i][-1] != ""):
-        code = codeArr[i]
-        if(code[1] == 0):
-            content += code[-1]
-        else:
-            j = len(content) - code[0]
-            for k in range(code[1]):
-                content += content[j]
-                j = j + 1
-            content += code[-1]
-        i = i + 1
-        try:
-            if(codeArr[i][-1] == ""): #Check if we have reached the "NULL" end marker
-                code = codeArr[i]
-                j = len(content) - code[0]
-                for k in range(code[1]):
-                    content += content[j]
-                    j = j + 1
-        except(IndexError): #This means that we have reached the end
-            break
-    return content
-
-#params:
-#   fileName: name of the file to be compressed including the extension
-#   W: window size
-#   L: lookahead buffer size
-#   infWindow: bool that if true overrides W and L and uses "infinite" buffer and window size
-#This is mainly a wrapper function for encode that reads the content of a file and passes it through
-def compressFile(fileName, W, L, infWindow):
+def getLongestPrefix(window, buffer, i):
+    global count
     global bitCount
+    l = len(buffer)
+    search = window + buffer
+    #print(window, buffer)
+    longestPrefix = window.rfind(buffer[0:l])
+    while(l > 0):
+        if(longestPrefix != -1):
+            break
+        l = l - 1
+        longestPrefix = window.rfind(buffer[0:l])
+#    i = 0
+#    if(longestPrefix != -1 and i < len(buffer) - 1 and buffer[i] == buffer[i+1]): #Check for self-referential matches
+#        l = l + 1
+#        i = i + 1
+    return longestPrefix, l
+
+#params:
+#   fileName: name of the binary file to be compressed including the extension
+#Takes and encoded array and recreates the orginal content
+def decode(fileName):
+    global bitCount
+    global count
+    count = 0
+    decodeContent = bitarray()
+    with open(fileName.split(".")[0] + '.bin', 'rb') as file: #Read binary
+        byteCount = (bitCount / 8) * 2 + 1
+        binContent = file.read(int(byteCount))
+        lengthNums = int(bitCount / 8) #Computes the number of bytes that each int value is encoded as7
+        while(binContent):
+            code = (binContent[0:lengthNums], binContent[lengthNums:lengthNums*2], binContent[-1])
+            if(count <= 7):
+                print(int.from_bytes(code[0], byteorder='big'), int.from_bytes(code[1], byteorder='big'), code[-1])
+            count += 1
+            if(code[1] == 0):
+                decodeContent += bin(code[-1])[2:].zfill(8)
+            else:
+                if(count == 134):
+                    print(len(decodeContent), int.from_bytes(code[0], byteorder='big'))
+                    pass
+                j = len(decodeContent) - (int.from_bytes(code[0], byteorder='big') * 8) #points to the first bit that needs to be copied
+                for k in range(code[1][-1]): #Copy the bytes that need to be copied
+                    decodeContent += decodeContent[j:j + 8]
+                    j = j + 8 #next byte to copy
+                decodeContent += bin(code[-1])[2:].zfill(8)
+            binContent = file.read(int(byteCount))
+    decodeContent = decodeContent[0:len(decodeContent)-8] #Remove end marker 
+    print(len(decodeContent) / 8)
+    with open(fileName.split(".")[0] + "Decomp" + "." + fileName.split(".")[1], "wb") as file: #Write decompressed content to file
+        decodeContent.tofile(file)
+        file.flush()
+    return decodeContent
+
+def calc_bitCount(W):
+    pass
+
+"""
+These imports are for the testing/experimentation system
+"""
+import time
+import os
+
+def experiment(n, fileName, W, L):
+    global bitCount
+    compTimes = []
+    decompTimes = []
+    sizeComp = -1
+    sizeUncomp = -1     
     if(W > 2**bitCount - 1):
         W = 2**bitCount - 1
         L = 2**bitCount - 1
         print("The window and buffer sizes were above the maximum for the no. of bytes used to encode distance and length so have been adjusted to: " + str(2**bitCount - 1))
-    with open(fileName, encoding="utf8") as file:
-        content = file.read()
-    if(infWindow):
-        W = len(content)
-        L = len(content)
-    encoded = encode(content, W, L)
-    binaryName = fileName.split(".")[0] + ".bin"
-    with open(binaryName, "wb") as file:
-        encoded.tofile(file)
-        file.flush()
-    print("File " + fileName + " compressed.")
+    for i in range(n):
+        print(i)
+        start  = time.time()
+        encode(fileName, W, L)
+        endComp = time.time()
+        compTimes.append(endComp - start)
+        start = time.time()
+        decode(fileName)
+        endDecomp = time.time()
+        decompTimes.append(endDecomp - start)
+    sizeComp = os.path.getsize("./" + fileName.split(".")[0] + ".bin")
+    sizeUncomp = os.path.getsize("./" + fileName)
+    timeCompress = sum(compTimes) / len(compTimes)
+    timeDecompress = sum(decompTimes) / len(decompTimes)
+    print("Across " + str(n) +  " tests it took " + str(timeCompress*1000) + " miliseconds to compress " + fileName + " from " + str(sizeUncomp) + " to " + str(sizeComp) + " bytes")
+    print("Across " + str(n) +  " tests it took " + str(timeDecompress*1000) + " miliseconds to decompress " + fileName.split(".")[0] + ".bin")
+    print("The compression ratio is: " + str(sizeUncomp / sizeComp))
 
-#params:
-#   fileName: name of the binary file to be compressed excluding the extension
-#This is mainly a wrapper function for decode that reads the content of the correspinding binary and passes it through  
-def decompressFile(fileName):
-    global bitCount
-    decoded = []
-    binary = bitarray()
-    with open(fileName + '.bin', 'rb') as file: #Read binary
-        binary.fromfile(file)
-    binary = binary.to01() #Turn bitarray into string of binary
-    for j in range(0, len(binary), bitCount*2 + 8): #Reads the string 5 bytes at a time
-        triBytes = binary[j:j + bitCount*2 + 8]
-        decoded.append((int(triBytes[0:bitCount], 2), int(triBytes[bitCount:bitCount*2], 2), chr(int(triBytes[bitCount*2:bitCount*2 + 8], 2)))) #Creates an array of triplets to pass into decode
-    decompressed = decode(decoded)
-    decompressed = decompressed[0:-1] #Remove the ending marker
-    with open("decompressed.txt", "w+") as file: #Write decompressed content to file
-        file.write(decompressed)
-        file.flush()
-    print("File " + fileName + " decompressed.")
-    
-compressFile("text1.txt", 255, 255, True)
-decompressFile("text1")
 
-#def experiment(n):
+#experiment(5, "htbk26report.pdf", 255, 255)
+encode("text1.txt", 300, 300)
+decode("text1.txt")
