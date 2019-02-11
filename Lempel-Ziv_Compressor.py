@@ -152,8 +152,8 @@ def experiment(n, fileName, W, L):
     sizeUncomp = os.path.getsize("./" + fileName)
     timeCompress = sum(compTimes) / len(compTimes)
     timeDecompress = sum(decompTimes) / len(decompTimes)
-    print("Across " + str(n) +  " tests it took " + str(timeCompress) + " miliseconds to compress " + fileName + " from " + str(sizeUncomp) + " to " + str(sizeComp) + " bytes")
-    print("Across " + str(n) +  " tests it took " + str(timeDecompress) + " miliseconds to decompress " + fileName.split(".")[0] + ".bin")
+    print("Across " + str(n) +  " tests it took " + str(timeCompress) + " seconds to compress " + fileName + " from " + str(sizeUncomp) + " to " + str(sizeComp) + " bytes")
+    print("Across " + str(n) +  " tests it took " + str(timeDecompress) + " seconds to decompress " + fileName.split(".")[0] + ".bin")
     print("The compression ratio is: " + str(sizeUncomp / sizeComp))
 
 
