@@ -6,13 +6,14 @@ Created on Mon Feb 4 19:19:47 2019
 """
 from bitarray import bitarray
 
-dBits = 16 #This global variable allows one to determine the amount of bytes to be used to encode distance
+dBits = 8 #This global variable allows one to determine the amount of bytes to be used to encode distance
 lBits = 8 #This global variable allows one to determine the amount of bytes to be used to encode length
 
 #params:
+#   fileName: name of file being encoded including extension
 #   content: All bytes of file to be compressed
-#   W: window size
-#   L: lookahead buffer size
+#   W: window size in bytes
+#   L: lookahead buffer size in bytes
 #The main encode function that turns content into a binary bitarray and writes it to a .bin file
 def encode(fileName, content, W, L):
     global dBits
@@ -33,7 +34,7 @@ def encode(fileName, content, W, L):
         else:
             i = codedChar[0] #set i to current position in input
     binaryName = fileName.split(".")[0] + ".bin"
-    with open(binaryName, "wb") as file:
+    with open("binaries/" + binaryName, "wb") as file:
         encoded.tofile(file)
     return encoded
 
@@ -93,13 +94,12 @@ def getLongestPrefix(window, buffer):
 
 #params:
 #   fileName: name of the binary file to be compressed including the extension
-#   decodeContent: bitarray containing all the encoded tuples
 #Takes and encoded array and recreates the orginal content
 def decode(fileName):
     global dBits
     global lBits
     decodeContent = bitarray()
-    with open(fileName.split(".")[0] + '.bin', 'rb') as file: #Read binary
+    with open("binaries/" + fileName.split(".")[0] + '.bin', 'rb') as file: #Read binary
         byteCount = (dBits / 8) + (lBits / 8) + 1
         binContent = file.read(int(byteCount))
         while(binContent):
@@ -115,46 +115,3 @@ def decode(fileName):
             binContent = file.read(int(byteCount))
     decodeContent = decodeContent[0:len(decodeContent)-8] #Remove end marker 
     return decodeContent
-
-"""
-These imports are for the testing/experimentation system
-"""
-import time
-import os
-
-def experiment(n, fileName, W, L):
-    global dBits
-    global lBits
-    compTimes = []
-    decompTimes = []
-    sizeComp = -1
-    sizeUncomp = -1     
-    if(W > 2**dBits - 1):
-        W = 2**dBits - 1
-        L = 2**lBits - 1
-        print("The window and buffer sizes were above the maximum for the no. of bytes used to encode distance and length so have been adjusted to: " + str(2**dBits - 1) + " and " + str(2**lBits - 1) + " respectively.")  
-    with open(fileName, "rb") as file:
-        content = file.read()
-    decodeContent = bitarray()
-    for i in range(n):
-        print(i)
-        start  = time.time()
-        encode(fileName, content, W, L)
-        endComp = time.time()
-        compTimes.append(endComp - start)
-        start = time.time()
-        decodeContent = decode(fileName)
-        endDecomp = time.time()
-        decompTimes.append(endDecomp - start)   
-    with open(fileName.split(".")[0] + "Decomp" + "." + fileName.split(".")[1], "wb") as file: #Write decompressed content to file
-        decodeContent.tofile(file) 
-    sizeComp = os.path.getsize("./" + fileName.split(".")[0] + ".bin")
-    sizeUncomp = os.path.getsize("./" + fileName)
-    timeCompress = sum(compTimes) / len(compTimes)
-    timeDecompress = sum(decompTimes) / len(decompTimes)
-    print("Across " + str(n) +  " tests it took " + str(timeCompress) + " seconds to compress " + fileName + " from " + str(sizeUncomp) + " to " + str(sizeComp) + " bytes")
-    print("Across " + str(n) +  " tests it took " + str(timeDecompress) + " seconds to decompress " + fileName.split(".")[0] + ".bin")
-    print("The compression ratio is: " + str(sizeUncomp / sizeComp))
-
-
-experiment(5, "gamefile2.xml", 1023, 255)

@@ -636,50 +636,32 @@ Across 5 tests it took 0.7985525608062745 seconds to compress Image1.jpg from 45
 Across 5 tests it took 0.021716785430908204 seconds to decompress Image1.bin
 The compression ratio is: 0.506478999106345
 
-ross 5 tests it took 0.12253313064575196 seconds to decompress gamefile10.bin
-The compression ratio is: 9.232935930105569
-
-AISreportDoc2x.docx
+text1.txt
 Window size: 8191Buffer size: 255
 Bytes used to encode a tuple: 4.0
-Across 5 tests it took 13.511726665496827 seconds to compress AISreportDoc2x.docx from 33035 to 56884 bytes
-Across 5 tests it took 0.08570265769958496 seconds to decompress AISreportDoc2x.bin
-The compression ratio is: 0.5807432669995077
+Across 5 tests it took 1.6601717948913575 seconds to compress text1.txt from 33448 to 7592 bytes
+Across 5 tests it took 0.028417491912841798 seconds to decompress text1.bin
+The compression ratio is: 4.405690200210748
 
-AISreportPdf.pdf
-Window size: 8191Buffer size: 255
-Bytes used to encode a tuple: 4.0
-Across 5 tests it took 91.06685495376587 seconds to compress AISreportPdf.pdf from 203249 to 360504 bytes
-Across 5 tests it took 0.3804625988006592 seconds to decompress AISreportPdf.bin
-The compression ratio is: 0.5637912478086234
+gamefile1.xml
+Window size: 255Buffer size: 255
+Bytes used to encode a tuple: 3.0
+Across 5 tests it took 2.662262296676636 seconds to compress gamefile1.xml from 200270 to 61140 bytes
+Across 5 tests it took 0.15895891189575195 seconds to decompress gamefile1.bin
+The compression ratio is: 3.2755969905135753
 
-Image1.jpg
-Window size: 8191Buffer size: 255
-Bytes used to encode a tuple: 4.0
-Across 5 tests it took 0.7985525608062745 seconds to compress Image1.jpg from 4534 to 8952 bytes
-Across 5 tests it took 0.021716785430908204 seconds to decompress Image1.bin
-The compression ratio is: 0.506478999106345
-ross 5 tests it took 0.12253313064575196 seconds to decompress gamefile10.bin
-The compression ratio is: 9.232935930105569
+originals/gamefile1.xml
+gamefile1.xml
+Window size: 255Buffer size: 255
+Bytes used to encode a tuple: 3.0
+Across 5 tests it took 2.6749838829040526 seconds to compress gamefile1.xml from 200270 to 81520 bytes
+Across 5 tests it took 0.17098040580749513 seconds to decompress gamefile1.bin
+The compression ratio is: 2.4566977428851815
 
-AISreportDoc2x.docx
-Window size: 8191Buffer size: 255
-Bytes used to encode a tuple: 4.0
-Across 5 tests it took 13.511726665496827 seconds to compress AISreportDoc2x.docx from 33035 to 56884 bytes
-Across 5 tests it took 0.08570265769958496 seconds to decompress AISreportDoc2x.bin
-The compression ratio is: 0.5807432669995077
-
-AISreportPdf.pdf
-Window size: 8191Buffer size: 255
-Bytes used to encode a tuple: 4.0
-Across 5 tests it took 91.06685495376587 seconds to compress AISreportPdf.pdf from 203249 to 360504 bytes
-Across 5 tests it took 0.3804625988006592 seconds to decompress AISreportPdf.bin
-The compression ratio is: 0.5637912478086234
-
-Image1.jpg
-Window size: 8191Buffer size: 255
-Bytes used to encode a tuple: 4.0
-Across 5 tests it took 0.7985525608062745 seconds to compress Image1.jpg from 4534 to 8952 bytes
-Across 5 tests it took 0.021716785430908204 seconds to decompress Image1.bin
-The compression ratio is: 0.506478999106345
+gamefile1.xml
+Window size: 255Buffer size: 255
+Bytes used to encode a tuple: 3.0
+Across 5 tests it took 2.689490270614624 seconds to compress gamefile1.xml from 200270 to 81520 bytes
+Across 5 tests it took 0.1710218906402588 seconds to decompress gamefile1.bin
+The compression ratio is: 2.4566977428851815
 
