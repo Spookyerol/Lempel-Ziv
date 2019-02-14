@@ -79,7 +79,7 @@ def testFile(n, fileName, W, L):
         print("next", W, L)
         dBits = 8
         lBits = 8
-        if(W > 255): #The testing algorithm supports upto 5 bytes large tuples however this can be changed to higher values since the lz77 source can handle it
+        if(W > 255): 
             dBits = 16
         if(L > 255):
             lBits = 16
